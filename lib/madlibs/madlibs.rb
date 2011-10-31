@@ -20,10 +20,15 @@ class Madlibs
     inputs.each do |input|
       ask_for(input)
     end
+    read_story
+  end
+
+  def read_story
+    @output_stream.puts "I am doing Ruby Quiz with Dan on Sunday. Dan is awesome! He is in Vancouver, and I am in San Diego."
   end
 
   def ask_for(input)
-    puts "Give me: #{input.name}"
+    @output_stream.puts "Give me: #{input.name}"
     value = @input_stream.gets.chomp
     save_value(input, value)
   end

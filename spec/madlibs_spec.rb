@@ -27,8 +27,13 @@ describe Madlibs do
     end
 
     it "asks the user for a value for each variable" do
+      inputs = StringIO.new(" \n"*20)
+      outputs = StringIO.new("")
+      madlibs.input_stream = inputs
+      madlibs.output_stream = outputs
+
       madlibs.inputs.each do |input|
-        STDOUT.should_receive(:puts).with(/#{input.name}/)
+        outputs.should_receive(:puts).with(/#{input.name}/)
       end
       madlibs.play
     end
@@ -45,7 +50,7 @@ describe Madlibs do
       inputs = StringIO.new("Dan\nVancouver\nSan Diego\n")
       outputs = StringIO.new
       madlibs = Madlibs.new(inputs, outputs)
-      madibs.play
+      madlibs.play
       outputs.rewind
       outputs.read.should include("I am doing Ruby Quiz with Dan on Sunday. Dan is awesome! He is in Vancouver, and I am in San Diego.")
     end
