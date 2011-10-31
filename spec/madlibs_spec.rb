@@ -1,45 +1,54 @@
 require File.expand_path("../../lib/madlibs", __FILE__) 
 
 describe Madlibs do
+  let(:madlibs) { Madlibs.new }
 
-  before(:each) do
-    @madlibs = Madlibs.new
-    @madlibs.load_file("sample_data.madlib")
-  end
-
-  it "extracts all variables from a madlibs document" do
-    @madlibs.inputs.should == ["a family member", "an event", "a number",
-      "gift:a noun", "an adjective", "gift", "an adjective", "gift", "body part"]
-  end
-
-  it "identifies reusable inputs as variables" do
-    @madlibs.variables.keys.should include(:gift)
-  end
-
-  it "opens and reads the story template from a .madlib file" do
-    pending "do this after, use the alternate_sample_data.madlib file to
-             break the previous two tests"
-  end
-
-  it "asks the user for a value for each variable" do
-    @madlibs.inputs.each do |input|
-      STDOUT.should_receive(:puts).with(/#{input}/)
+  describe "load_file" do
+    it "should populate variables attribute" do
+      File.stub!(:read) { "((foo))" }
+      madlibs.load_file("sample")
+      madlibs.inputs.size.should == 1
+      madlibs.inputs.first.name.should == 'foo'
     end
-    @madlibs.play
+
+    it "should populate variables attribute" do
+      File.stub!(:read) { "((foo:bar))" }
+      madlibs.load_file("sample")
+      madlibs.inputs.size.should == 1
+      madlibs.inputs.first.name.should == 'foo:bar'
+      madlibs.inputs.first.variable_name.should == 'foo'
+      madlibs.inputs.first.should be_variable
+    end
   end
 
-  it "saves the input value for a variable" do
-    @madlibs.stub!(:gets) { "Brad" }
-    @madlibs.ask_for("a family member")
-    @madlibs.value_for("a family member").should == "Brad"
-  end
+  describe "post load_file" do
+    before(:each) do
+      madlibs.load_file("spec/sample_data.madlib")
+    end
 
-  # it "outputs story with users selected words" do
-  #   @madlibs.set_word "a family member", "Brad"
-  #   @madlibs.set_word "an event", "birthday"
-  #   @madlibs.set_word "a number", "12"
-  #   @madlibs.set_word "gift:a noun", "12"
-  #   @madlibs.read_story.should == 
-  # end
+    it "asks the user for a value for each variable" do
+      madlibs.inputs.each do |input|
+        STDOUT.should_receive(:puts).with(/#{input.name}/)
+      end
+      madlibs.play
+    end
+
+    it "saves the input value for a variable" do
+      inputs = StringIO.new("Brad\n")
+      madlibs.input_stream = inputs
+      madlibs.ask_for(madlibs.find_input("a family member"))
+      madlibs.value_for("a family member").should == "Brad"
+    end
+
+    it "outputs story with users selected words" do
+      File.stub!(:read) { "I am doing Ruby Quiz with ((name: a person)) on Sunday. ((name)) is awesome! He is in ((a city)), and I am in ((another city))." }
+      inputs = StringIO.new("Dan\nVancouver\nSan Diego\n")
+      outputs = StringIO.new
+      madlibs = Madlibs.new(inputs, outputs)
+      madibs.play
+      outputs.rewind
+      outputs.read.should include("I am doing Ruby Quiz with Dan on Sunday. Dan is awesome! He is in Vancouver, and I am in San Diego.")
+    end
+  end
 
 end
