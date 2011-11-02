@@ -10,20 +10,22 @@ class Madlibs
   def load_file(file_path)
     @story = File.read(file_path)
 
-    story.scan(/\(\([\w\s\d:]+\)\)/).each do |match|
+    @story.scan(/\(\([\w\s\d:]+\)\)/).each do |match|
       variable = match.sub('((', '').sub('))', '')
       inputs << Input.new(variable)
     end
+
+    self
   end
 
-  def each_input
+  def with_each_input
     inputs.each do |input|
       yield(input) if block_given?
     end
   end
 
   def play
-    each_input { |input| find_value_for(input) }
+    with_each_input { |input| find_value_for(input) }
     read_story
   end
 
@@ -33,17 +35,20 @@ class Madlibs
   end
 
   def ask_for(input)
-    output_stream.puts "Give me: #{input.name}"
+    output_stream.puts "Give me: #{input.display_name}"
     value = input_stream.gets.chomp
   end
 
   def read_story
-    each_input { |input| story.gsub!("(("+input.name+"))", input.value) }
-    output_stream.puts story
+    story_with_input = story
+    with_each_input do |input|
+      story_with_input = story_with_input.gsub("(("+input.name+"))", input.value)
+    end
+    output_stream.puts story_with_input
   end
 
   def already_asked_for?(input)
-    each_input do |other_input|
+    with_each_input do |other_input|
       return true if (other_input.variable? and other_input.variable_name == input.name)
     end
     false
@@ -56,23 +61,15 @@ class Madlibs
   def find_input(name)
     inputs.find do |input|
       input.name == name || input.variable_name == name
-    end || EmptyInput.new
+    end
   end
 
   def value_for(input)
     find_input(input.name).value
   end
 
-  class EmptyInput
-    def method_missing(method, *args, &block)
-      ""
-    end
-  end
-
   class Input
-    attr_accessor :variable_name
-    attr_accessor :name
-    attr_accessor :value
+    attr_accessor :variable_name, :name, :value
 
     def initialize(name)
       self.name = name
@@ -81,13 +78,24 @@ class Madlibs
       end
     end
 
+    def display_name
+      if self.variable?
+        name.split(':').last.strip
+      else
+        name
+      end
+    end
+
     def variable?
       variable_name
     end
 
+    #not necessary anymore but cool idea to overwrite inspect for debugging
     def inspect
       "Input: " + [name, value].inspect
     end
   end
 
 end
+
+# m = Madlibs.new.load_file("spec/sample_data.madlib").play
