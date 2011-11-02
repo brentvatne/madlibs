@@ -9,6 +9,7 @@ class Madlibs
 
   def load_file(file_path)
      story = File.read(file_path)
+     puts story
      story.scan(/\(\([\w\s\d:]+\)\)/).each do |match|
        variable = match.sub('((', '').sub('))', '')
        self.inputs << Input.new(variable)
@@ -28,9 +29,18 @@ class Madlibs
   end
 
   def ask_for(input)
-    @output_stream.puts "Give me: #{input.name}"
-    value = @input_stream.gets.chomp
-    save_value(input, value)
+    unless already_asked_for(input)
+      @output_stream.puts "Give me: #{input.name}"
+      value = @input_stream.gets.chomp
+      save_value(input, value)
+    end
+  end
+
+  def already_asked_for(input)
+    inputs.each do |other_input|
+      return true if other_input.variable? and other_input.variable_name == input.name
+    end
+    false
   end
 
   def save_value(input, value)

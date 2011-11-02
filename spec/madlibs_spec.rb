@@ -40,6 +40,19 @@ describe Madlibs do
       end
     end
 
+    it "does not ask for a variable twice", :focus => true do
+      File.stub!(:read) { "I am doing Ruby Quiz with ((name: a person)) on Sunday. ((name)) is awesome! He is in ((a city)), and I am in ((another city))." }
+      inputs = StringIO.new(" \n"*20)
+      outputs = StringIO.new
+      madlibs = Madlibs.new(inputs, outputs)
+      madlibs.load_file("some_file")
+
+      madlibs.play
+
+      outputs.rewind
+      outputs.read.scan(/name/).size.should == 1
+    end
+
     it "saves the input value for a variable" do
       inputs = StringIO.new("Brad\n")
       madlibs.input_stream = inputs
@@ -52,7 +65,10 @@ describe Madlibs do
       inputs = StringIO.new("Dan\nVancouver\nSan Diego\n")
       outputs = StringIO.new
       madlibs = Madlibs.new(inputs, outputs)
+      madlibs.load_file("some_file")
+
       madlibs.play
+
       outputs.rewind
       outputs.read.should include("I am doing Ruby Quiz with Dan on Sunday. Dan is awesome! He is in Vancouver, and I am in San Diego.")
     end
