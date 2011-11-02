@@ -8,37 +8,42 @@ class Madlibs
   end
 
   def load_file(file_path)
-     story = File.read(file_path)
-     puts story
-     story.scan(/\(\([\w\s\d:]+\)\)/).each do |match|
-       variable = match.sub('((', '').sub('))', '')
-       self.inputs << Input.new(variable)
-     end
+    @story = File.read(file_path)
+    @story.scan(/\(\([\w\s\d:]+\)\)/).each do |match|
+      variable = match.sub('((', '').sub('))', '')
+      self.inputs << Input.new(variable)
+    end
+  end
 
+  def each_input
+    inputs.each do |input|
+      yield(input) if block_given?
+    end
   end
 
   def play
-    inputs.each do |input|
-      ask_for(input)
-    end
+    each_input { |input| get_value_for(input) }
     read_story
   end
 
-  def read_story
-    @output_stream.puts "I am doing Ruby Quiz with Dan on Sunday. Dan is awesome! He is in Vancouver, and I am in San Diego."
+  def get_value_for(input)
+    value = already_asked_for?(input) ? value_for(input.name) : ask_for(input)
+    save_value(input, value)
   end
 
   def ask_for(input)
-    unless already_asked_for(input)
-      @output_stream.puts "Give me: #{input.name}"
-      value = @input_stream.gets.chomp
-      save_value(input, value)
-    end
+    output_stream.puts "Give me: #{input.name}"
+    value = input_stream.gets.chomp
   end
 
-  def already_asked_for(input)
-    inputs.each do |other_input|
-      return true if other_input.variable? and other_input.variable_name == input.name
+  def read_story
+    each_input { |input| story.gsub!("(("+input.name+"))", input.value) }
+    output_stream.puts story
+  end
+
+  def already_asked_for?(input)
+    each_input do |other_input|
+      return true if (other_input.variable? and other_input.variable_name == input.name)
     end
     false
   end
@@ -51,7 +56,7 @@ class Madlibs
     inputs.find {|input| input.name == name}
   end
 
-  def value_for(name)
+  def value_for(input)
     find_input(name).value
   end
 
