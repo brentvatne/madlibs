@@ -28,14 +28,16 @@ describe Madlibs do
 
     it "asks the user for a value for each variable" do
       inputs = StringIO.new(" \n"*20)
-      outputs = StringIO.new("")
+      outputs = StringIO.new
       madlibs.input_stream = inputs
       madlibs.output_stream = outputs
 
-      madlibs.inputs.each do |input|
-        outputs.should_receive(:puts).with(/#{input.name}/)
-      end
       madlibs.play
+
+      madlibs.inputs.each do |input|
+        outputs.rewind
+        outputs.read.should include(input.name)
+      end
     end
 
     it "saves the input value for a variable" do
