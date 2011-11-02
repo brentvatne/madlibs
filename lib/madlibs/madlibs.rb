@@ -1,5 +1,5 @@
 class Madlibs
-  attr_accessor :inputs, :input_stream, :output_stream
+  attr_accessor :inputs, :input_stream, :output_stream, :story
 
   def initialize(input_stream = STDIN, output_stream = STDOUT)
     @input_stream = input_stream
@@ -9,9 +9,10 @@ class Madlibs
 
   def load_file(file_path)
     @story = File.read(file_path)
-    @story.scan(/\(\([\w\s\d:]+\)\)/).each do |match|
+
+    story.scan(/\(\([\w\s\d:]+\)\)/).each do |match|
       variable = match.sub('((', '').sub('))', '')
-      self.inputs << Input.new(variable)
+      inputs << Input.new(variable)
     end
   end
 
@@ -22,12 +23,12 @@ class Madlibs
   end
 
   def play
-    each_input { |input| get_value_for(input) }
+    each_input { |input| find_value_for(input) }
     read_story
   end
 
-  def get_value_for(input)
-    value = already_asked_for?(input) ? value_for(input.name) : ask_for(input)
+  def find_value_for(input)
+    value = already_asked_for?(input) ? value_for(input) : ask_for(input)
     save_value(input, value)
   end
 
@@ -53,11 +54,19 @@ class Madlibs
   end
 
   def find_input(name)
-    inputs.find {|input| input.name == name}
+    inputs.find do |input|
+      input.name == name || input.variable_name == name
+    end || EmptyInput.new
   end
 
   def value_for(input)
-    find_input(name).value
+    find_input(input.name).value
+  end
+
+  class EmptyInput
+    def method_missing(method, *args, &block)
+      ""
+    end
   end
 
   class Input
